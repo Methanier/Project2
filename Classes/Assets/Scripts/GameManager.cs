@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public class GameManager : MonoBehaviour {
 
@@ -12,10 +13,14 @@ public class GameManager : MonoBehaviour {
     [Tooltip("Text Asset to hold playerinfo")]
     public TextAsset saveInfo;
 
+    public List<TextAsset> saves;
+
     private string filePath;
 
     [Header("Player Info")]
     public PlayInfo playerInfo;
+
+    public MenuManager mm;
 
     private void Awake()
     {
@@ -55,6 +60,7 @@ public class GameManager : MonoBehaviour {
 
     public void LoadInfoFromResources()
     {
+        Debug.Log("Load from Resources");
         if(saveInfo == null)
         {
             saveInfo = Resources.Load<TextAsset>("ClassesgameInfo") as TextAsset;
@@ -65,6 +71,14 @@ public class GameManager : MonoBehaviour {
         playerInfo = JsonUtility.FromJson<PlayInfo>(infoJSON);
     }
 
+    public void LoadAllFromResources()
+    {
+        Debug.Log("Load all from resources");
+        TextAsset[] temp = Resources.LoadAll<TextAsset>("Data");
+
+        saves = new List<TextAsset>(temp);
+    }
+
     public void LoadInfoFromWeb()
     {
         StartCoroutine("GetFromWeb");
@@ -72,7 +86,39 @@ public class GameManager : MonoBehaviour {
 
     public IEnumerator GetFromWeb()
     {
-        Debug.Log("Load From Web");
-        yield return null;
+        UnityWebRequest request;
+        string infoJSON;
+
+        request = UnityWebRequest.Get(webAddress);
+
+        yield return request.SendWebRequest();
+
+        if (request.isNetworkError)
+        {
+            Debug.Log(request.error);
+        }
+        else
+        {
+            infoJSON = ((DownloadHandler)request.downloadHandler).text;
+            playerInfo = JsonUtility.FromJson<PlayInfo>(infoJSON);
+        }
+
+        mm.UpdateInputFields();
+    }
+
+    public void DispalySaves()
+    {
+        StartCoroutine("DisplayLoads");
+    }
+
+    public IEnumerator DisplayLoads()
+    {
+        foreach(TextAsset ta in saves)
+        {
+            string temp = ta.text;
+            playerInfo = JsonUtility.FromJson<PlayInfo>(temp);
+            mm.UpdateInputFields();
+            yield return new WaitForSeconds(2);
+        }
     }
 }
