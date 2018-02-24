@@ -7,6 +7,11 @@ public class GameManager : MonoBehaviour {
 
     public static GameManager instance { get; private set; }
 
+    [Tooltip("Address to download file from")]
+    public string webAddress;
+    [Tooltip("Text Asset to hold playerinfo")]
+    public TextAsset saveInfo;
+
     private string filePath;
 
     [Header("Player Info")]
@@ -29,29 +34,45 @@ public class GameManager : MonoBehaviour {
 
     private void Update()
     {
-        if(Input.GetKey(KeyCode.S))
-        {
-            Debug.Log("save");
-            SaveInfo();
-        }
-        if(Input.GetKey(KeyCode.L))
-        {
-            Debug.Log("load");
-            LoadInfo();
-        }
+
     }
 
-    public void SaveInfo()
+    public void SaveInfoToDisk()
     {
+        Debug.Log("Save To Disk");
         string infoJSON = JsonUtility.ToJson(playerInfo);
 
         File.WriteAllText(filePath, infoJSON);
     }
 
-    public void LoadInfo()
+    public void LoadInfoFromDisk()
     {
+        Debug.Log("Load From Disk");
         string infoJSON = File.ReadAllText(filePath);
 
         playerInfo = JsonUtility.FromJson<PlayInfo>(infoJSON);
+    }
+
+    public void LoadInfoFromResources()
+    {
+        if(saveInfo == null)
+        {
+            saveInfo = Resources.Load<TextAsset>("ClassesgameInfo") as TextAsset;
+        }
+
+        string infoJSON = saveInfo.text;
+
+        playerInfo = JsonUtility.FromJson<PlayInfo>(infoJSON);
+    }
+
+    public void LoadInfoFromWeb()
+    {
+        StartCoroutine("GetFromWeb");
+    }
+
+    public IEnumerator GetFromWeb()
+    {
+        Debug.Log("Load From Web");
+        yield return null;
     }
 }
